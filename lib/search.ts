@@ -13,9 +13,10 @@ export function normalize(value: string) {
 export function searchAnime(pool: Anime[], query: string, exclude: Set<number>, limit = 8) {
   const q = normalize(query)
   if (q.length < 1) return []
-  const scored: { anime: Anime; score: number }[] = []
+  const byId = new Map(pool.map((a) => [a.id, a]))
+  const bestByFranchise = new Map<number, number>()
   for (const anime of pool) {
-    if (exclude.has(anime.id)) continue
+    if (exclude.has(anime.franchiseId)) continue
     const names = [anime.titleEnglish, anime.titleRomaji, ...anime.synonyms]
       .filter((n): n is string => Boolean(n))
       .map(normalize)
@@ -26,12 +27,19 @@ export function searchAnime(pool: Anime[], query: string, exclude: Set<number>, 
       else if (name.split(' ').some((w) => w.startsWith(q))) best = Math.min(best, 2)
       else if (name.includes(q)) best = Math.min(best, 3)
     }
-    if (best < Infinity) scored.push({ anime, score: best })
+    if (best === Infinity) continue
+    const prev = bestByFranchise.get(anime.franchiseId)
+    if (prev === undefined || best < prev) bestByFranchise.set(anime.franchiseId, best)
   }
-  return scored
-    .sort((a, b) => a.score - b.score)
+  return [...bestByFranchise.entries()]
+    .sort((a, b) => a[1] - b[1])
+    .map(([franchiseId]) => byId.get(franchiseId))
+    .filter((a): a is Anime => Boolean(a))
     .slice(0, limit)
-    .map((s) => s.anime)
+}
+
+export function sameFranchise(a: Anime, b: Anime) {
+  return a.franchiseId === b.franchiseId
 }
 
 function levenshtein(a: string, b: string) {

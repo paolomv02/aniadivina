@@ -24,6 +24,7 @@ query ($page: Int) {
       coverImage { large color }
       bannerImage
       siteUrl
+      relations { edges { relationType node { id type } } }
     }
   }
 }`
@@ -45,6 +46,51 @@ type RawMedia = {
   coverImage: { large: string; color: string | null }
   bannerImage: string | null
   siteUrl: string
+  relations: { edges: { relationType: string; node: { id: number; type: string } }[] } | null
+}
+
+const FRANCHISE_RELATIONS = new Set(['PREQUEL', 'SEQUEL', 'PARENT', 'SIDE_STORY'])
+
+function assignFranchises(raw: RawMedia[], pool: Anime[]) {
+  const parent = new Map<number, number>()
+  const find = (x: number): number => {
+    let root = x
+    while (parent.has(root) && parent.get(root) !== root) root = parent.get(root) as number
+    parent.set(x, root)
+    return root
+  }
+  const union = (a: number, b: number) => {
+    const ra = find(a)
+    const rb = find(b)
+    if (ra !== rb) parent.set(ra, rb)
+  }
+
+  for (const m of raw) {
+    find(m.id)
+    for (const edge of m.relations?.edges ?? []) {
+      if (edge.node.type === 'ANIME' && FRANCHISE_RELATIONS.has(edge.relationType)) {
+        union(m.id, edge.node.id)
+      }
+    }
+  }
+
+  const groups = new Map<number, Anime[]>()
+  for (const anime of pool) {
+    const root = find(anime.id)
+    const list = groups.get(root)
+    if (list) list.push(anime)
+    else groups.set(root, [anime])
+  }
+
+  for (const members of groups.values()) {
+    const first = [...members].sort((a, b) => {
+      const tvA = a.format === 'TV' ? 0 : 1
+      const tvB = b.format === 'TV' ? 0 : 1
+      if (tvA !== tvB) return tvA - tvB
+      return (a.year ?? 9999) - (b.year ?? 9999) || a.id - b.id
+    })[0]
+    for (const anime of members) anime.franchiseId = first.id
+  }
 }
 
 export async function anilistQuery<T>(
@@ -84,6 +130,7 @@ function toAnime(m: RawMedia): Anime {
     color: m.coverImage.color,
     banner: m.bannerImage,
     siteUrl: m.siteUrl,
+    franchiseId: m.id,
   }
 }
 
@@ -92,15 +139,18 @@ let inflight: Promise<Anime[]> | null = null
 
 async function loadPool(): Promise<Anime[]> {
   const all: Anime[] = []
+  const raw: RawMedia[] = []
   const seen = new Set<number>()
   for (let page = 1; page <= PAGES; page++) {
     const data = await anilistQuery<{ Page: { media: RawMedia[] } }>(POOL_QUERY, { page })
     for (const m of data.Page.media) {
       if (seen.has(m.id)) continue
       seen.add(m.id)
+      raw.push(m)
       all.push(toAnime(m))
     }
   }
+  assignFranchises(raw, all)
   return all
 }
 

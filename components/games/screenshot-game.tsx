@@ -113,7 +113,7 @@ export function ScreenshotGame() {
             <AnimeSearch
               pool={pool}
               excludeIds={[]}
-              onSelect={(anime) => addAttempt({ label: anime.title, correct: anime.id === round.anime.id })}
+              onSelect={(anime) => addAttempt({ label: anime.title, correct: anime.franchiseId === round.anime.franchiseId })}
               onSkip={() => addAttempt({ label: '', correct: false, skipped: true })}
             />
           )}

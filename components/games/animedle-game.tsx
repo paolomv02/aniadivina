@@ -91,12 +91,12 @@ export function AnimedleGame() {
 
   const target = useMemo(() => {
     if (!pool) return null
-    const candidates = pool.slice(0, DAILY_POOL)
+    const candidates = pool.slice(0, DAILY_POOL).filter((a) => a.id === a.franchiseId)
     const seed = practiceSeed ?? hashString(todayKey())
     return candidates[seed % candidates.length]
   }, [pool, practiceSeed])
 
-  const won = !!target && guesses.some((g) => g.id === target.id)
+  const won = !!target && guesses.some((g) => g.franchiseId === target.franchiseId)
   const finished = won || guesses.length >= MAX_ATTEMPTS
   const isDaily = practiceSeed === null
 
@@ -154,7 +154,7 @@ export function AnimedleGame() {
           {guesses.length > 0 && (
             <ul className="flex flex-col gap-3" aria-label="Intentos">
               {guesses.map((g) => (
-                <GuessRow key={g.id} guess={g} cells={compare(g, target)} correct={g.id === target.id} />
+                <GuessRow key={g.id} guess={g} cells={compare(g, target)} correct={g.franchiseId === target.franchiseId} />
               ))}
             </ul>
           )}

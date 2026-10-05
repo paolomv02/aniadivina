@@ -17,6 +17,8 @@ export type Anime = {
   color: string | null
   banner: string | null
   siteUrl: string
+  /** Id of the franchise's first entry (usually season 1); shared by every season. */
+  franchiseId: number
 }
 
 export type CharacterRound = {
