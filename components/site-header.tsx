@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Sparkles } from 'lucide-react'
+import { Sparkles, Users } from 'lucide-react'
 import { GAMES } from '@/lib/games'
 import { cn } from '@/lib/utils'
 
@@ -44,6 +44,21 @@ export function SiteHeader() {
                 </li>
               )
             })}
+            <li>
+              <Link
+                href="/multijugador"
+                aria-current={pathname.startsWith('/multijugador') ? 'page' : undefined}
+                className={cn(
+                  'flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
+                  pathname.startsWith('/multijugador')
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                )}
+              >
+                <Users className="size-4" aria-hidden="true" />
+                1v1
+              </Link>
+            </li>
           </ul>
         </nav>
       </div>

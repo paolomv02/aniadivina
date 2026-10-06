@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, Users } from 'lucide-react'
 import { GAMES } from '@/lib/games'
 
 export default function HomePage() {
@@ -7,7 +7,7 @@ export default function HomePage() {
     <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-12 md:py-20">
       <section className="flex max-w-2xl flex-col gap-4">
         <p className="w-fit rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-          4 minijuegos · datos en tiempo real
+          4 minijuegos · modo solitario y 1v1 online
         </p>
         <h1 className="font-heading text-4xl font-bold tracking-tight text-balance md:text-6xl">
           ¿Cuánto sabes de <span className="text-primary">anime</span>?
@@ -16,6 +16,14 @@ export default function HomePage() {
           Adivina personajes, descubre el anime del día, reconoce escenas y openings. Cada ronda se
           carga al momento desde Jikan, AniList y AnimeThemes.
         </p>
+        <Link
+          href="/multijugador"
+          className="group flex w-fit items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-transform hover:scale-[1.02]"
+        >
+          <Users className="size-4" aria-hidden="true" />
+          Jugar 1v1 online
+          <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+        </Link>
       </section>
 
       <section aria-labelledby="games-heading">
@@ -30,6 +38,7 @@ export default function HomePage() {
                 <Link
                   href={game.href}
                   className="group flex h-full flex-col gap-4 rounded-2xl border border-border bg-card p-6 transition-colors hover:border-primary/50 hover:bg-accent"
+                  aria-label={`Jugar ${game.title}`}
                 >
                   <div className="flex items-center justify-between">
                     <span className="flex size-11 items-center justify-center rounded-xl bg-primary/15 text-primary">
