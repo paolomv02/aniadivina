@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { Loader2, LogOut, Trophy } from 'lucide-react'
-import { supabase, type MpRoom } from '@/lib/supabase'
+import { getSupabase, type MpRoom } from '@/lib/supabase'
 import { GAMES } from '@/lib/games'
 import { cn } from '@/lib/utils'
 
@@ -26,6 +26,7 @@ export default function GameRoomPage() {
     let unsub: (() => void) | undefined
 
     async function init() {
+      const supabase = getSupabase()
       const { data, error: dbError } = await supabase
         .from('mp_rooms')
         .select('*')
@@ -74,6 +75,7 @@ export default function GameRoomPage() {
 
   const updateScore = useCallback(async (won: boolean) => {
     if (!room) return
+    const supabase = getSupabase()
     const isMeHost = playerIdRef.current === room.host_player_id
     const updates = won
       ? isMeHost
@@ -86,6 +88,7 @@ export default function GameRoomPage() {
 
   const leaveRoom = useCallback(async () => {
     if (!room) return
+    const supabase = getSupabase()
     if (playerIdRef.current === room.host_player_id) {
       await supabase.from('mp_rooms').delete().eq('id', room.id)
     } else if (playerIdRef.current === room.guest_player_id) {

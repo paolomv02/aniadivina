@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { supabase, type MpRoom } from '@/lib/supabase'
+import { getSupabase, type MpRoom } from '@/lib/supabase'
 
 function randomPlayerId() {
   return crypto.randomUUID()
@@ -48,6 +48,7 @@ export function useMultiplayer() {
 
   const subscribe = useCallback((roomId: string, hostId: string) => {
     setIsHost(playerIdRef.current === hostId)
+    const supabase = getSupabase()
     const channel = supabase
       .channel(`mp_room:${roomId}`)
       .on(
@@ -71,6 +72,7 @@ export function useMultiplayer() {
       try {
         const playerId = playerIdRef.current
         const code = generateRoomCode()
+        const supabase = getSupabase()
         const { data, error: dbError } = await supabase
           .from('mp_rooms')
           .insert({
@@ -104,6 +106,7 @@ export function useMultiplayer() {
       try {
         const playerId = playerIdRef.current
         const normalizedCode = code.trim().toUpperCase()
+        const supabase = getSupabase()
         const { data: existing, error: queryError } = await supabase
           .from('mp_rooms')
           .select('*')
@@ -152,6 +155,7 @@ export function useMultiplayer() {
   const leaveRoom = useCallback(async () => {
     if (!room) return
     const playerId = playerIdRef.current
+    const supabase = getSupabase()
     if (playerId === room.host_player_id) {
       await supabase.from('mp_rooms').delete().eq('id', room.id)
     } else if (playerId === room.guest_player_id) {
