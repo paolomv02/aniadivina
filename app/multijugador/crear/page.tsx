@@ -30,7 +30,7 @@ function CreateRoomContent() {
   const targetScore = Number(params.get('points') ?? '10')
   const game = GAMES.find((g) => g.label.toLowerCase() === gameType.toLowerCase()) ?? GAMES[0]
 
-  const { room, loading, error, createRoom, startGame, leaveRoom, playerId } = useMultiplayer()
+  const { room, loading, error, createRoom, startGame, leaveRoom, isHost, playerId } = useMultiplayer()
   const createdRef = useRef(false)
   const [copied, setCopied] = useState(false)
 
