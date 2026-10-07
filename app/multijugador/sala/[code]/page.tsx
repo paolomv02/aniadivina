@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { Loader2, LogOut, Trophy } from 'lucide-react'
+import { Loader2, LogOut } from 'lucide-react'
 import { getSupabase, type MpRoom } from '@/lib/supabase'
 import { GAMES } from '@/lib/games'
 import { cn } from '@/lib/utils'
+import { MultiplayerGame } from '@/components/multiplayer/multiplayer-game'
 
 export default function GameRoomPage() {
   const params = useParams<{ code: string }>()
@@ -73,19 +74,6 @@ export default function GameRoomPage() {
   const myScore = room ? (isHost ? room.host_score : room.guest_score) : 0
   const oppScore = room ? (isHost ? room.guest_score : room.host_score) : 0
 
-  const updateScore = useCallback(async (won: boolean) => {
-    if (!room) return
-    const supabase = getSupabase()
-    const isMeHost = playerIdRef.current === room.host_player_id
-    const updates = won
-      ? isMeHost
-        ? { host_score: room.host_score + 1 }
-        : { guest_score: room.guest_score + 1 }
-      : {}
-    if (Object.keys(updates).length === 0) return
-    await supabase.from('mp_rooms').update(updates).eq('id', room.id)
-  }, [room])
-
   const leaveRoom = useCallback(async () => {
     if (!room) return
     const supabase = getSupabase()
@@ -125,8 +113,6 @@ export default function GameRoomPage() {
   }
 
   const game = GAMES.find((g) => g.label.toLowerCase() === room.game_type.toLowerCase()) ?? GAMES[0]
-  const gameHref = game.href
-
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-6">
       {/* Scoreboard */}
@@ -139,7 +125,7 @@ export default function GameRoomPage() {
         <ScoreCard name={oppNickname} score={oppScore} highlight={false} />
       </div>
 
-      {/* Game link banner */}
+      {/* Shared game */}
       <div className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <span className="flex size-10 items-center justify-center rounded-xl bg-primary/15 text-primary">
@@ -148,53 +134,22 @@ export default function GameRoomPage() {
           <div>
             <p className="font-heading text-sm font-bold">{game.title}</p>
             <p className="text-xs text-muted-foreground">
-              {isHost
-                ? 'Lanza el minijuego y juega tu ronda. Tu puntuación se actualiza en tiempo real.'
-                : 'El anfitrión ha elegido el minijuego. ¡Juega tu ronda!'}
+              El mismo reto aparece para los dos. El primero que acierte gana la ronda.
             </p>
           </div>
         </div>
-        <a
-          href={gameHref}
-          target="_blank"
-          rel="noreferrer"
-          className="flex h-10 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-        >
-          Jugar ronda
-        </a>
       </div>
+      <MultiplayerGame room={room} playerId={playerIdRef.current} isHost={isHost} />
 
       {/* Instructions */}
       <div className="rounded-2xl border border-border bg-card p-4">
         <h2 className="font-heading text-sm font-bold">Cómo funciona el 1v1</h2>
         <ol className="mt-2 flex flex-col gap-1.5 text-sm text-muted-foreground">
-          <li>1. Pulsa <span className="font-medium text-foreground">Jugar ronda</span> para abrir el minijuego en una pestaña nueva.</li>
-          <li>2. Juega tu ronda y vuelve a esta pantalla.</li>
-          <li>3. Usa los botones de abajo para registrar si acertaste o fallaste.</li>
-          <li>4. El marcador se actualiza en tiempo real para ambos jugadores.</li>
+          <li>1. El anfitrión prepara una ronda compartida para ambos jugadores.</li>
+          <li>2. Cada jugador responde desde esta misma pantalla.</li>
+          <li>3. El primer acierto gana el punto automáticamente.</li>
+          <li>4. El reto, los intentos y el marcador se actualizan en tiempo real.</li>
         </ol>
-      </div>
-
-      {/* Score controls */}
-      <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4">
-        <p className="text-sm font-medium">Registrar resultado de tu ronda</p>
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={() => updateScore(true)}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-success/15 px-4 py-3 text-sm font-semibold text-success transition-colors hover:bg-success/25"
-          >
-            <Trophy className="size-4" aria-hidden="true" />
-            Acierto
-          </button>
-          <button
-            type="button"
-            onClick={() => updateScore(false)}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm font-semibold text-destructive transition-colors hover:bg-destructive/10"
-          >
-            Fallo
-          </button>
-        </div>
       </div>
 
       <button
