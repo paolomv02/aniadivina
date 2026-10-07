@@ -7,21 +7,20 @@ export default function HomePage() {
     <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-12 md:py-20">
       <section className="flex max-w-2xl flex-col gap-4">
         <p className="w-fit rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-          4 minijuegos · modo solitario y 1v1 online
+          4 minijuegos · modo solitario y multijugador
         </p>
         <h1 className="font-heading text-4xl font-bold tracking-tight text-balance md:text-6xl">
           ¿Cuánto sabes de <span className="text-primary">anime</span>?
         </h1>
         <p className="text-base text-muted-foreground text-pretty md:text-lg">
-          Adivina personajes, descubre el anime del día, reconoce escenas y openings. Cada ronda se
-          carga al momento desde Jikan, AniList y AnimeThemes.
+          Adivina personajes, descubre el anime del día, reconoce escenas y openings.
         </p>
         <Link
           href="/multijugador"
           className="group flex w-fit items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-transform hover:scale-[1.02]"
         >
           <Users className="size-4" aria-hidden="true" />
-          Jugar 1v1 online
+          Jugar multijugador
           <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
         </Link>
       </section>
