@@ -13,9 +13,6 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-3 md:flex-row md:items-center md:justify-between">
         <Link href="/" className="flex items-center gap-2 self-start md:self-auto">
-          <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Sparkles className="size-4" aria-hidden="true" />
-          </span>
           <span className="font-heading text-lg font-bold tracking-tight">
             Ani<span className="text-primary">Adivina</span>
           </span>
