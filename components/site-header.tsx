@@ -56,7 +56,7 @@ export function SiteHeader() {
                 )}
               >
                 <Users className="size-4" aria-hidden="true" />
-                1v1
+                Multijugador
               </Link>
             </li>
           </ul>

@@ -48,7 +48,13 @@ export default function GameRoomPage() {
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'mp_rooms', filter: `id=eq.${data.id}` },
-          (payload) => setRoom(payload.new as MpRoom),
+            (payload) => {
+              if (payload.eventType === 'DELETE') {
+                window.location.href = '/multijugador/terminada'
+                return
+              }
+              setRoom(payload.new as MpRoom)
+            },
         )
         .subscribe()
 
@@ -64,12 +70,13 @@ export default function GameRoomPage() {
 
   const leaveRoom = useCallback(async () => {
     if (!room) return
+    const isLeavingHost = playerIdRef.current === room.host_player_id
     const supabase = getSupabase()
     await supabase.rpc('leave_mp_room', {
       target_room_id: room.id,
       leaving_player_id: playerIdRef.current,
     })
-    window.location.href = '/multijugador'
+    window.location.href = isLeavingHost ? '/multijugador/terminada' : '/multijugador'
   }, [room])
 
   if (loading) {

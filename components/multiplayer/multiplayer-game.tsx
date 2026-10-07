@@ -59,7 +59,7 @@ export function MultiplayerGame({
   const round = room.round_data as DuelRound | null
   const currentPlayer = room.players?.find((player) => player.id === playerId)
   const mine = currentPlayer?.attempts ?? []
-  const maxAttempts = isAnimedle(round ?? ({} as DuelRound)) ? 10 : MAX_ATTEMPTS
+  const maxAttempts = MAX_ATTEMPTS
 
   useEffect(() => {
     if (!isHost || room.status !== 'playing' || room.round_status !== 'idle' || generating.current) return
@@ -121,6 +121,14 @@ export function MultiplayerGame({
     }).eq('id', room.id).eq('round_number', room.round_number).eq('round_status', 'won')
   }
 
+  async function restartMatch() {
+    if (!isHost || room.status !== 'finished') return
+    await getSupabase().rpc('restart_mp_room', {
+      target_room_id: room.id,
+      expected_host_id: playerId,
+    })
+  }
+
   if (!round || room.round_status === 'idle') {
     return (
       <div className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card p-8 text-center">
@@ -164,6 +172,7 @@ export function MultiplayerGame({
           </p>
           <p className="text-sm text-muted-foreground">Respuesta: {getLabel(round)}</p>
           {isHost && room.status === 'playing' && <Button onClick={nextRound}>Nueva ronda</Button>}
+          {isHost && room.status === 'finished' && <Button onClick={restartMatch}>Reiniciar partida</Button>}
         </div>
       ) : (
         <>

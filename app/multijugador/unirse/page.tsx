@@ -118,8 +118,8 @@ function JoinRoomContent() {
 
       <button
         type="button"
-        onClick={() => {
-          leaveRoom()
+        onClick={async () => {
+          await leaveRoom()
           window.location.href = '/multijugador'
         }}
         className="flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"

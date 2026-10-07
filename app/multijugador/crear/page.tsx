@@ -30,7 +30,7 @@ function CreateRoomContent() {
   const targetScore = Number(params.get('points') ?? '10')
   const game = GAMES.find((g) => g.label.toLowerCase() === gameType.toLowerCase()) ?? GAMES[0]
 
-  const { room, loading, error, createRoom, startGame, leaveRoom, isHost, playerId } = useMultiplayer()
+  const { room, loading, error, createRoom, startGame, leaveRoom, playerId } = useMultiplayer()
   const createdRef = useRef(false)
   const [copied, setCopied] = useState(false)
 
@@ -142,9 +142,9 @@ function CreateRoomContent() {
 
       <button
         type="button"
-        onClick={() => {
-          leaveRoom()
-          window.location.href = '/multijugador'
+        onClick={async () => {
+          await leaveRoom()
+          window.location.href = '/multijugador/terminada'
         }}
         className="flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
       >
