@@ -14,6 +14,7 @@ export default function ModeSelectionPage() {
   const [selectedGame, setSelectedGame] = useState<string | null>(null)
   const [joinCode, setJoinCode] = useState('')
   const [joinName, setJoinName] = useState('')
+  const [targetScore, setTargetScore] = useState('10')
   const [creating, setCreating] = useState(false)
 
   function pickSolo(gameHref: string) {
@@ -24,7 +25,7 @@ export default function ModeSelectionPage() {
     setCreating(true)
     const name = encodeURIComponent(joinName || 'Jugador 1')
     const game = encodeURIComponent(gameType)
-    router.push(`/multijugador/crear?game=${game}&name=${name}&href=${encodeURIComponent(gameHref)}`)
+    router.push(`/multijugador/crear?game=${game}&name=${name}&points=${targetScore}&href=${encodeURIComponent(gameHref)}`)
   }
 
   function submitJoin(e: React.FormEvent) {
@@ -42,7 +43,7 @@ export default function ModeSelectionPage() {
           ¿Cómo quieres jugar?
         </h1>
         <p className="text-sm text-muted-foreground text-pretty md:text-base">
-          Elige entre jugar solo a tu ritmo o retar a un amigo en una partida 1v1 online.
+          Elige entre jugar solo a tu ritmo o retar a tus amigos en una partida online de hasta 10 jugadores.
         </p>
       </section>
 
@@ -58,7 +59,7 @@ export default function ModeSelectionPage() {
           />
           <ModeCard
             icon={<Users className="size-6" />}
-            title="Modo 1v1 Online"
+            title="Modo multijugador online"
             description="Crea una sala o únete con un código. El que más acierte gana."
             badge="Tiempo real"
             onClick={() => setStep('join')}
@@ -118,7 +119,7 @@ export default function ModeSelectionPage() {
             >
               Volver
             </button>
-            <h2 className="font-heading text-lg font-semibold">Partida 1v1</h2>
+            <h2 className="font-heading text-lg font-semibold">Partida multijugador</h2>
           </div>
 
           <div className="grid gap-5 lg:grid-cols-2">
@@ -141,6 +142,12 @@ export default function ModeSelectionPage() {
                   placeholder="Jugador 1"
                   className="h-11 rounded-xl border border-input bg-background px-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/30"
                 />
+              </label>
+              <label className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium">Puntos para ganar</span>
+                <select value={targetScore} onChange={(e) => setTargetScore(e.target.value)} className="h-11 rounded-xl border border-input bg-background px-3 text-sm outline-none focus:border-primary">
+                  {[10, 30, 50, 100].map((points) => <option key={points} value={points}>{points} puntos</option>)}
+                </select>
               </label>
               <div className="flex flex-col gap-2">
                 {GAMES.map((game) => {

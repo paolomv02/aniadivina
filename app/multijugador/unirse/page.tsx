@@ -27,7 +27,7 @@ function JoinRoomContent() {
   const code = params.get('code') ?? ''
   const nickname = params.get('name') ?? 'Jugador 2'
 
-  const { room, loading, error, joinRoom, leaveRoom, isHost, setError } = useMultiplayer()
+  const { room, loading, error, joinRoom, leaveRoom, playerId, setError } = useMultiplayer()
   const joinedRef = useRef(false)
   const [localError, setLocalError] = useState<string | null>(null)
 
@@ -103,17 +103,17 @@ function JoinRoomContent() {
       </div>
 
       <div className="flex flex-col gap-3">
-        <PlayerSlot name={room.host_nickname} status="connected" isYou={false} />
-        <PlayerSlot
-          name={room.guest_nickname ?? nickname}
-          status="connected"
-          isYou={!isHost}
-        />
+        <p className="text-sm font-medium">{room.players.length}/10 jugadores conectados</p>
+        {room.players.map((player) => (
+          <PlayerSlot key={player.id} name={player.nickname} status="connected" isYou={player.id === playerId} />
+        ))}
       </div>
 
       <div className="flex items-center justify-center gap-2 rounded-xl border border-success/40 bg-success/10 p-4 text-sm">
         <Check className="size-4 text-success" aria-hidden="true" />
-        <span className="text-foreground">¡Te has unido! Comenzando la partida...</span>
+        <span className="text-foreground">
+          {room.players.length >= 2 ? '¡Te has unido! Esperando a que el anfitrión inicie la partida...' : 'Te has unido. Esperando al menos un jugador más...'}
+        </span>
       </div>
 
       <button

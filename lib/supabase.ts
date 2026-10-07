@@ -9,6 +9,8 @@ export type MpRoom = {
   guest_player_id: string | null
   guest_nickname: string | null
   status: string
+  target_score: number
+  match_winner_id: string | null
   host_score: number
   guest_score: number
   round_number: number
@@ -17,9 +19,17 @@ export type MpRoom = {
   round_data: Record<string, unknown> | null
   host_attempts: MultiplayerAttempt[]
   guest_attempts: MultiplayerAttempt[]
+  players: MultiplayerPlayer[]
   round_started_at: string | null
   created_at: string
   updated_at: string
+}
+
+export type MultiplayerPlayer = {
+  id: string
+  nickname: string
+  score: number
+  attempts: MultiplayerAttempt[]
 }
 
 export type MultiplayerAttempt = {

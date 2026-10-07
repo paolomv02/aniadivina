@@ -20,7 +20,7 @@ export function generateRoomCode() {
   return code
 }
 
-export type CreateRoomOpts = { gameType: string; nickname: string }
+export type CreateRoomOpts = { gameType: string; nickname: string; targetScore?: number }
 export type JoinRoomOpts = { code: string; nickname: string }
 
 export function useMultiplayer() {
@@ -49,7 +49,7 @@ export function useMultiplayer() {
     return () => { supabase.removeChannel(channel) }
   }, [])
 
-  const createRoom = useCallback(async ({ gameType, nickname }: CreateRoomOpts) => {
+  const createRoom = useCallback(async ({ gameType, nickname, targetScore = 10 }: CreateRoomOpts) => {
     setLoading(true)
     setError(null)
     try {
@@ -64,6 +64,13 @@ export function useMultiplayer() {
           host_player_id: playerId,
           host_nickname: nickname || 'Jugador 1',
           status: 'waiting',
+          players: [{
+            id: playerId,
+            nickname: nickname || 'Jugador 1',
+            score: 0,
+            attempts: [],
+          }],
+          target_score: targetScore,
         })
         .select()
         .single()
@@ -80,6 +87,20 @@ export function useMultiplayer() {
       setLoading(false)
     }
   }, [])
+
+  const startGame = useCallback(async () => {
+    if (!room || !isHost || room.players.length < 2) return false
+    const { data, error: startError } = await getSupabase().rpc('start_mp_room', {
+      target_room_id: room.id,
+      expected_host_id: playerIdRef.current,
+    })
+    if (startError) {
+      setError(`No se pudo iniciar la partida: ${startError.message}`)
+      return false
+    }
+    setRoom(data)
+    return true
+  }, [isHost, room])
 
   const joinRoom = useCallback(async ({ code, nickname }: JoinRoomOpts) => {
     setLoading(true)
@@ -99,25 +120,11 @@ export function useMultiplayer() {
         setError('No se encontró ninguna sala con ese código.')
         return null
       }
-      if (existing.status !== 'waiting') {
-        setError('Esa sala ya está ocupada o ha terminado.')
-        return null
-      }
-      if (existing.guest_player_id) {
-        setError('Esa sala ya tiene dos jugadores.')
-        return null
-      }
-
-      const { data, error: updateError } = await supabase
-        .from('mp_rooms')
-        .update({
-          guest_player_id: playerId,
-          guest_nickname: nickname || 'Jugador 2',
-          status: 'playing',
-        })
-        .eq('id', existing.id)
-        .select()
-        .single()
+      const { data, error: updateError } = await supabase.rpc('join_mp_room', {
+        target_room_id: existing.id,
+        joining_player_id: playerId,
+        joining_nickname: nickname || 'Jugador',
+      })
 
       if (updateError) throw updateError
       setRoom(data)
@@ -136,14 +143,10 @@ export function useMultiplayer() {
     if (!room) return
     const playerId = playerIdRef.current
     const supabase = getSupabase()
-    if (playerId === room.host_player_id) {
-      await supabase.from('mp_rooms').delete().eq('id', room.id)
-    } else if (playerId === room.guest_player_id) {
-      await supabase
-        .from('mp_rooms')
-        .update({ guest_player_id: null, guest_nickname: null, status: 'waiting' })
-        .eq('id', room.id)
-    }
+    await supabase.rpc('leave_mp_room', {
+      target_room_id: room.id,
+      leaving_player_id: playerId,
+    })
     setRoom(null)
   }, [room])
 
@@ -152,5 +155,5 @@ export function useMultiplayer() {
     return subscribe(room.id, room.host_player_id)
   }, [room?.id, subscribe])
 
-  return { room, loading, error, isHost, playerId: playerIdRef.current, createRoom, joinRoom, leaveRoom, setError }
+  return { room, loading, error, isHost, playerId: playerIdRef.current, createRoom, joinRoom, startGame, leaveRoom, setError }
 }

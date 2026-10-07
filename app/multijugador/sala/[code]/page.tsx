@@ -60,31 +60,15 @@ export default function GameRoomPage() {
   }, [code])
 
   const isHost = room ? playerIdRef.current === room.host_player_id : false
-  const myNickname = room
-    ? isHost
-      ? room.host_nickname
-      : room.guest_nickname ?? 'Jugador 2'
-    : ''
-  const oppNickname = room
-    ? isHost
-      ? room.guest_nickname ?? 'Rival'
-      : room.host_nickname
-    : ''
-
-  const myScore = room ? (isHost ? room.host_score : room.guest_score) : 0
-  const oppScore = room ? (isHost ? room.guest_score : room.host_score) : 0
+  const players = room?.players ?? []
 
   const leaveRoom = useCallback(async () => {
     if (!room) return
     const supabase = getSupabase()
-    if (playerIdRef.current === room.host_player_id) {
-      await supabase.from('mp_rooms').delete().eq('id', room.id)
-    } else if (playerIdRef.current === room.guest_player_id) {
-      await supabase
-        .from('mp_rooms')
-        .update({ guest_player_id: null, guest_nickname: null, status: 'waiting' })
-        .eq('id', room.id)
-    }
+    await supabase.rpc('leave_mp_room', {
+      target_room_id: room.id,
+      leaving_player_id: playerIdRef.current,
+    })
     window.location.href = '/multijugador'
   }, [room])
 
@@ -116,14 +100,14 @@ export default function GameRoomPage() {
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-6">
       {/* Scoreboard */}
-      <div className="flex items-center justify-between gap-3 rounded-2xl border border-border bg-card p-4">
-        <ScoreCard name={myNickname} score={myScore} isYou highlight />
-        <div className="flex flex-col items-center gap-0.5">
-          <span className="font-heading text-xs font-bold uppercase tracking-wide text-muted-foreground">VS</span>
-          <span className="font-mono text-lg font-bold text-primary">{myScore} - {oppScore}</span>
-        </div>
-        <ScoreCard name={oppNickname} score={oppScore} highlight={false} />
+      <div className="grid grid-cols-2 gap-2 rounded-2xl border border-border bg-card p-4 sm:grid-cols-3">
+        {players.map((player) => (
+          <ScoreCard key={player.id} name={player.nickname} score={player.score} isYou={player.id === playerIdRef.current} highlight={player.id === playerIdRef.current} />
+        ))}
       </div>
+      <p className="text-center text-sm text-muted-foreground">
+        Meta: <span className="font-semibold text-foreground">{room.target_score} puntos</span>
+      </p>
 
       {/* Shared game */}
       <div className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -143,11 +127,11 @@ export default function GameRoomPage() {
 
       {/* Instructions */}
       <div className="rounded-2xl border border-border bg-card p-4">
-        <h2 className="font-heading text-sm font-bold">Cómo funciona el 1v1</h2>
+        <h2 className="font-heading text-sm font-bold">Cómo funciona la partida</h2>
         <ol className="mt-2 flex flex-col gap-1.5 text-sm text-muted-foreground">
-          <li>1. El anfitrión prepara una ronda compartida para ambos jugadores.</li>
+          <li>1. El anfitrión prepara una ronda compartida para todos los jugadores.</li>
           <li>2. Cada jugador responde desde esta misma pantalla.</li>
-          <li>3. El primer acierto gana el punto automáticamente.</li>
+          <li>3. El primer acierto gana el punto automáticamente. Se necesitan al menos 2 jugadores.</li>
           <li>4. El reto, los intentos y el marcador se actualizan en tiempo real.</li>
         </ol>
       </div>

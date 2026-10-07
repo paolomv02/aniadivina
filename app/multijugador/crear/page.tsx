@@ -27,18 +27,18 @@ function CreateRoomContent() {
   const params = useSearchParams()
   const gameType = params.get('game') ?? 'personaje'
   const nickname = params.get('name') ?? 'Jugador 1'
-  const gameHref = params.get('href') ?? '/personaje'
+  const targetScore = Number(params.get('points') ?? '10')
   const game = GAMES.find((g) => g.label.toLowerCase() === gameType.toLowerCase()) ?? GAMES[0]
 
-  const { room, loading, error, createRoom, leaveRoom, isHost } = useMultiplayer()
+  const { room, loading, error, createRoom, startGame, leaveRoom, isHost, playerId } = useMultiplayer()
   const createdRef = useRef(false)
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     if (createdRef.current) return
     createdRef.current = true
-    createRoom({ gameType: game.label.toLowerCase(), nickname })
-  }, [createRoom, game.label, nickname])
+    createRoom({ gameType: game.label.toLowerCase(), nickname, targetScore })
+  }, [createRoom, game.label, nickname, targetScore])
 
   useEffect(() => {
     if (!room || room.status !== 'playing') return
@@ -70,7 +70,7 @@ function CreateRoomContent() {
         <p className="text-sm text-destructive">{error}</p>
         <button
           type="button"
-          onClick={() => createRoom({ gameType: game.label.toLowerCase(), nickname })}
+          onClick={() => createRoom({ gameType: game.label.toLowerCase(), nickname, targetScore })}
           className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
         >
           Reintentar
@@ -81,8 +81,6 @@ function CreateRoomContent() {
 
   if (!room) return null
 
-  const guestJoined = room.status === 'playing' && !!room.guest_player_id
-
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-10 md:py-16">
       <div className="flex flex-col gap-2">
@@ -91,7 +89,7 @@ function CreateRoomContent() {
         </span>
         <h1 className="font-heading text-2xl font-bold tracking-tight md:text-3xl">Sala de espera</h1>
         <p className="text-sm text-muted-foreground">
-          Comparte el código con tu amigo para que pueda unirse.
+          Comparte el código para que se unan hasta 9 jugadores más. La partida empieza con 2.
         </p>
       </div>
 
@@ -114,36 +112,33 @@ function CreateRoomContent() {
         {copied && <p className="text-xs text-success">Código copiado al portapapeles</p>}
       </div>
 
-      {/* Player slots */}
       <div className="flex flex-col gap-3">
-        <PlayerSlot
-          name={room.host_nickname}
-          status="connected"
-          isYou={isHost}
-        />
-        <PlayerSlot
-          name={room.guest_nickname ?? 'Esperando invitado...'}
-          status={guestJoined ? 'connected' : 'waiting'}
-          isYou={!isHost}
-        />
+        <p className="text-sm font-medium">{room.players.length}/10 jugadores conectados</p>
+        {room.players.map((player) => (
+          <PlayerSlot key={player.id} name={player.nickname} status="connected" isYou={player.id === playerId} />
+        ))}
       </div>
 
       {/* Status */}
       <div className="flex items-center justify-center gap-2 rounded-xl border border-border bg-card p-4 text-sm">
-        {guestJoined ? (
+        {room.players.length >= 2 ? (
           <>
             <Check className="size-4 text-success" aria-hidden="true" />
-            <span className="text-foreground">
-              <span className="font-semibold">{room.guest_nickname}</span> se ha unido. ¡Comenzando la partida!
-            </span>
+            <span className="text-foreground">Ya hay suficientes jugadores. La partida puede comenzar.</span>
           </>
         ) : (
           <>
             <Loader2 className="size-4 animate-spin text-muted-foreground" aria-hidden="true" />
-            <span className="text-muted-foreground">Esperando a que se una tu amigo...</span>
+            <span className="text-muted-foreground">Esperando al menos un jugador más...</span>
           </>
         )}
       </div>
+      <p className="text-center text-sm text-muted-foreground">Meta de la partida: <span className="font-semibold text-foreground">{room.target_score} puntos</span></p>
+      {isHost && (
+        <button type="button" disabled={room.players.length < 2} onClick={async () => { if (await startGame()) window.location.href = `/multijugador/sala/${room.code}` }} className="rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground disabled:opacity-50">
+          {room.players.length < 2 ? 'Espera al menos 2 jugadores' : 'Iniciar partida'}
+        </button>
+      )}
 
       <button
         type="button"

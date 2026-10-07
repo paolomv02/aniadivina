@@ -57,8 +57,8 @@ export function MultiplayerGame({
   const [busy, setBusy] = useState(false)
   const generating = useRef(false)
   const round = room.round_data as DuelRound | null
-  const mine = playerId === room.host_player_id ? room.host_attempts : room.guest_attempts
-  const rival = playerId === room.host_player_id ? room.guest_attempts : room.host_attempts
+  const currentPlayer = room.players?.find((player) => player.id === playerId)
+  const mine = currentPlayer?.attempts ?? []
   const maxAttempts = isAnimedle(round ?? ({} as DuelRound)) ? 10 : MAX_ATTEMPTS
 
   useEffect(() => {
@@ -88,6 +88,7 @@ export function MultiplayerGame({
       round_data: data,
       host_attempts: [],
       guest_attempts: [],
+      players: room.players.map((player) => ({ ...player, attempts: [] })),
       round_started_at: new Date().toISOString(),
     }).eq('id', room.id).eq('round_number', room.round_number).eq('round_status', 'idle')
   }
@@ -97,33 +98,26 @@ export function MultiplayerGame({
     setBusy(true)
     const attempt: MultiplayerAttempt = { label, correct, ...(skipped ? { skipped: true } : {}) }
     const attempts = [...mine, attempt]
-    const field = playerId === room.host_player_id ? 'host_attempts' : 'guest_attempts'
     const supabase = getSupabase()
-    await supabase.from('mp_rooms').update({ [field]: attempts })
-      .eq('id', room.id).eq('round_number', room.round_number).eq('round_status', 'active')
-
-    if (correct) {
-      await supabase.rpc('claim_mp_room_round', {
-        room_id: room.id,
-        expected_round: room.round_number,
-        winner_player_id: playerId,
-      })
-    } else if (attempts.length >= maxAttempts && rival.length >= maxAttempts) {
-      await supabase.from('mp_rooms').update({ round_status: 'won', round_winner: null })
-        .eq('id', room.id).eq('round_number', room.round_number).eq('round_status', 'active')
-    }
+    await supabase.rpc('record_mp_attempt', {
+      target_room_id: room.id,
+      target_round: room.round_number,
+      player_id: playerId,
+      attempt,
+    })
     setGuess('')
     setBusy(false)
   }
 
   async function nextRound() {
-    if (!isHost || room.round_status !== 'won') return
+    if (!isHost || room.status !== 'playing' || room.round_status !== 'won') return
     await getSupabase().from('mp_rooms').update({
       round_status: 'idle',
       round_winner: null,
       round_data: null,
       host_attempts: [],
       guest_attempts: [],
+      players: room.players.map((player) => ({ ...player, attempts: [] })),
     }).eq('id', room.id).eq('round_number', room.round_number).eq('round_status', 'won')
   }
 
@@ -137,9 +131,7 @@ export function MultiplayerGame({
   }
 
   const finished = room.round_status === 'won'
-  const winnerName = room.round_winner
-    ? room.round_winner === room.host_player_id ? room.host_nickname : room.guest_nickname
-    : null
+  const winnerName = room.players?.find((player) => player.id === room.round_winner)?.nickname ?? null
   const stage = Math.min(mine.length, FILTERS.length - 1)
 
   return (
@@ -165,9 +157,13 @@ export function MultiplayerGame({
       {finished ? (
         <div className="flex flex-col items-center gap-3 rounded-xl bg-primary/10 p-5 text-center">
           <Trophy className="size-7 text-primary" aria-hidden="true" />
-          <p className="font-semibold">{winnerName ? `${winnerName} gana la ronda` : 'Ronda terminada'}</p>
+          <p className="font-semibold">
+            {room.status === 'finished'
+              ? `${winnerName ?? 'Un jugador'} gana la partida`
+              : winnerName ? `${winnerName} gana la ronda` : 'Ronda terminada'}
+          </p>
           <p className="text-sm text-muted-foreground">Respuesta: {getLabel(round)}</p>
-          {isHost && <Button onClick={nextRound}>Nueva ronda</Button>}
+          {isHost && room.status === 'playing' && <Button onClick={nextRound}>Nueva ronda</Button>}
         </div>
       ) : (
         <>
@@ -186,8 +182,9 @@ export function MultiplayerGame({
       )}
 
       <div className="grid gap-2 sm:grid-cols-2">
-        <AttemptSummary name="Tus intentos" attempts={mine} />
-        <AttemptSummary name="Intentos del rival" attempts={rival} />
+        {room.players?.filter((player) => player.id !== playerId).map((player) => (
+          <AttemptSummary key={player.id} name={`Intentos de ${player.nickname}`} attempts={player.attempts} />
+        ))}
       </div>
     </div>
   )
