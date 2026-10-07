@@ -15,10 +15,10 @@ type DuelRound = CharacterRound | OpeningRound | CaptureRound | AnimedleRound
 
 const MAX_ATTEMPTS = 5
 const FILTERS = [
-  'grayscale(1) brightness(0.1) contrast(1.8) blur(16px)',
-  'grayscale(1) brightness(0.25) contrast(1.5) blur(11px)',
-  'grayscale(0.7) brightness(0.5) contrast(1.25) blur(7px)',
-  'grayscale(0.3) brightness(0.8) blur(4px)',
+  'grayscale(0.9) brightness(0.45) contrast(1.35) blur(12px)',
+  'grayscale(0.9) brightness(0.55) contrast(1.25) blur(9px)',
+  'grayscale(0.7) brightness(0.65) contrast(1.15) blur(6px)',
+  'grayscale(0.3) brightness(0.85) blur(3px)',
   'brightness(1) blur(1.5px)',
 ]
 
