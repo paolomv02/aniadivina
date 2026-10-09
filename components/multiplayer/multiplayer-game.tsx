@@ -159,7 +159,7 @@ export function MultiplayerGame({
           <img src={round.anime.banner || '/placeholder.svg'} alt={finished ? round.anime.title : 'Captura misteriosa'} className="size-full object-cover" style={{ transform: `scale(${finished ? 1 : Math.max(1.15, 4.2 - mine.length * 0.75)})`, transformOrigin: `${round.focusX}% ${round.focusY}%` }} />
         </div>
       )}
-      {isOpening(round) && <audio controls src={round.audioUrl} className="w-full" />}
+      {isOpening(round) && <OpeningAudio key={round.audioUrl} src={round.audioUrl} />}
       {isAnimedle(round) && <p className="rounded-xl border border-border p-5 text-center text-sm text-muted-foreground">Adivina el anime del día con las pistas de cada intento.</p>}
 
       {finished ? (
@@ -182,9 +182,9 @@ export function MultiplayerGame({
               <Button type="submit" disabled={busy || guess.trim().length < 2}><Send className="size-4" aria-hidden="true" /></Button>
             </form>
           ) : isAnimedle(round) ? (
-            <AnimeSearch pool={pool ?? []} excludeIds={mine.map((attempt) => Number(attempt.label))} onSelect={(anime) => void submit(anime.title, anime.franchiseId === round.anime.franchiseId)} />
+            <AnimeSearch pool={pool ?? []} excludeIds={mine.map((attempt) => Number(attempt.label))} focusKey={room.round_number} onSelect={(anime) => void submit(anime.title, anime.franchiseId === round.anime.franchiseId)} />
           ) : (
-            <AnimeSearch pool={pool ?? []} excludeIds={mine.map((attempt) => Number(attempt.label))} onSelect={(anime) => void submit(anime.title, anime.franchiseId === round.anime.franchiseId)} onSkip={() => void submit('', false, true)} />
+            <AnimeSearch pool={pool ?? []} excludeIds={mine.map((attempt) => Number(attempt.label))} focusKey={room.round_number} onSelect={(anime) => void submit(anime.title, anime.franchiseId === round.anime.franchiseId)} onSkip={() => void submit('', false, true)} />
           )}
           {isCharacter(round) && <Button variant="secondary" onClick={() => void submit('', false, true)} disabled={busy}><SkipForward className="size-4" aria-hidden="true" />Saltar</Button>}
         </>
@@ -201,6 +201,31 @@ export function MultiplayerGame({
 
 function isAnimedle(round: DuelRound): round is AnimedleRound {
   return 'anime' in round && !isCharacter(round) && !isOpening(round) && !isCapture(round)
+}
+
+function OpeningAudio({ src }: { src: string }) {
+  const audioRef = useRef<HTMLAudioElement>(null)
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio || !ready) return
+    void audio.play().catch(() => {
+      // El navegador puede bloquear autoplay con sonido; el control sigue disponible.
+    })
+  }, [ready, src])
+
+  return (
+    <audio
+      ref={audioRef}
+      controls
+      autoPlay
+      preload="auto"
+      src={src}
+      onCanPlay={() => setReady(true)}
+      className="w-full"
+    />
+  )
 }
 
 function AttemptSummary({ name, attempts }: { name: string; attempts: MultiplayerAttempt[] }) {

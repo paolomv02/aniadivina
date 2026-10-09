@@ -24,15 +24,18 @@ export default function GameRoomPage() {
 
   useEffect(() => {
     if (!code) return
-    let unsub: (() => void) | undefined
+    let cancelled = false
+    let channel: ReturnType<ReturnType<typeof getSupabase>['channel']> | undefined
+    const supabase = getSupabase()
 
     async function init() {
-      const supabase = getSupabase()
       const { data, error: dbError } = await supabase
         .from('mp_rooms')
         .select('*')
         .eq('code', code)
         .maybeSingle()
+
+      if (cancelled) return
 
       if (dbError || !data) {
         setError('No se encontró la sala.')
@@ -43,12 +46,13 @@ export default function GameRoomPage() {
       setRoom(data)
       setLoading(false)
 
-      const channel = supabase
-        .channel(`game_room:${data.id}`)
+      channel = supabase
+        .channel(`game_room:${data.id}:${crypto.randomUUID()}`)
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'mp_rooms', filter: `id=eq.${data.id}` },
             (payload) => {
+              if (cancelled) return
               if (payload.eventType === 'DELETE') {
                 window.location.href = '/multijugador/terminada'
                 return
@@ -56,13 +60,18 @@ export default function GameRoomPage() {
               setRoom(payload.new as MpRoom)
             },
         )
-        .subscribe()
-
-      unsub = () => supabase.removeChannel(channel)
+        .subscribe((status) => {
+          if (status === 'CHANNEL_ERROR' && !cancelled) {
+            setError('No se pudo conectar a la sala en tiempo real.')
+          }
+        })
     }
 
-    init()
-    return () => { unsub?.() }
+    void init()
+    return () => {
+      cancelled = true
+      if (channel) void supabase.removeChannel(channel)
+    }
   }, [code])
 
   const isHost = room ? playerIdRef.current === room.host_player_id : false

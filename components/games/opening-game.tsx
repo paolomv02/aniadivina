@@ -63,6 +63,7 @@ export function OpeningGame() {
             <AnimeSearch
               pool={pool}
               excludeIds={[]}
+              focusKey={roundKey}
               onSelect={(anime) => addAttempt({ label: anime.title, correct: anime.franchiseId === round.anime.franchiseId })}
               onSkip={() => addAttempt({ label: '', correct: false, skipped: true })}
             />
@@ -101,6 +102,15 @@ function ClipPlayer({ src, limit }: { src: string; limit: number | null }) {
     if (audioRef.current) audioRef.current.volume = volume
   }, [volume])
 
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio || !ready) return
+    if (limit !== null) audio.currentTime = 0
+    void audio.play().catch(() => {
+      // El navegador puede bloquear autoplay con sonido; el botón sigue disponible.
+    })
+  }, [limit, ready, src])
+
   function toggle() {
     const audio = audioRef.current
     if (!audio) return
@@ -131,6 +141,7 @@ function ClipPlayer({ src, limit }: { src: string; limit: number | null }) {
         ref={audioRef}
         src={src}
         preload="auto"
+        autoPlay
         onCanPlay={() => setReady(true)}
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}

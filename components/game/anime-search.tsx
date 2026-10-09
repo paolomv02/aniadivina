@@ -1,6 +1,6 @@
 'use client'
 
-import { useId, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { Search, SkipForward } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { searchAnime } from '@/lib/search'
@@ -14,6 +14,7 @@ type Props = {
   onSkip?: () => void
   disabled?: boolean
   placeholder?: string
+  focusKey?: string | number
 }
 
 export function AnimeSearch({
@@ -23,6 +24,7 @@ export function AnimeSearch({
   onSkip,
   disabled,
   placeholder = 'Escribe el nombre de un anime...',
+  focusKey,
 }: Props) {
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
@@ -33,6 +35,12 @@ export function AnimeSearch({
   const exclude = useMemo(() => new Set(excludeIds), [excludeIds])
   const results = useMemo(() => searchAnime(pool, query, exclude), [pool, query, exclude])
   const showList = open && query.trim().length > 0
+
+  useEffect(() => {
+    if (focusKey !== undefined && !disabled) {
+      inputRef.current?.focus()
+    }
+  }, [disabled, focusKey])
 
   function choose(anime: Anime) {
     onSelect(anime)
